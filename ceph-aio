@@ -1,0 +1,71 @@
+ssh-keygen 
+
+sudo su 
+
+ssh-keygen 
+ssh-copy localhost 
+
+systemctl disable firewalld 
+systemctl stop firewalld 
+
+sudo subscription-manager repos --disable='*'
+sudo subscription-manager repos --enable=rhel-7-server-rpms --enable=rhel-7-server-extras-rpms --enable=rhel-7-server-rhceph-3-tools-rpms
+sudo yum -y install ceph-ansible cephmetrics-ansible
+
+sudo su 
+cd /usr/share/ceph-ansible/
+
+ssh-keygen 
+ssh-copy localhost 
+
+SUBNET=$(ip r | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/[0-9]\{1,2\}' | head -1)
+
+cp site.yml.sample site.yml
+mkdir single-machine
+echo single-machine | xargs -n 1 cp -a group_vars
+cp single-machine/group_vars/all.sample single-machine/group_vars/all
+cp single-machine/group_vars/osds.sample single-machine/group_vars/osds
+
+SUBNET=$(ip r | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/[0-9]\{1,2\}' | head -1)
+
+sed -i "s/#common_single_host_mode: true/common_single_host_mode: true/" single-machine/group_vars/all.yml
+sed -i "s/#journal_collocation: false/journal_collocation: true/" single-machine/group_vars/osds.yml
+sed -i "s/#monitor_address: 0.0.0.0/monitor_address: 192.168.122.20/" single-machine/group_vars/all.yml
+sed -i "s/#radosgw_address: 0.0.0.0/radosgw_address: 192.168.122.20/" single-machine/group_vars/all.yml
+
+
+sed -i "s|#public_network: 0.0.0.0\/0|public_network: ${SUBNET}|" single-machine/group_vars/all.yml
+sed -i "s/#journal_size: 0/journal_size: 100/" single-machine/group_vars/all.yml
+sed -i "s/#pool_default_size: 3/pool_default_size: 2/" single-machine/group_vars/all.yml
+sed -i "s/#ceph_repository_type: dummy/ceph_repository_type: cdn/" single-machine/group_vars/all.yml
+sed -i "s/#osd_scenario: dummy/osd_scenario: collocated/" single-machine/group_vars/osds.yml
+
+
+
+
+
+vi single-machine/inventory
+[mons]
+localhost
+
+[osds]
+localhost
+
+[rgws]
+localhost
+
+[mdss]
+localhost
+
+[mgrs]
+localhost
+
+vi single-machine/group_vars/osds.yml
+
+devices:
+  - /dev/vdb
+  - /dev/vdc
+
+sudo ansible all -i single-machine/inventory -m ping
+
+ansible-playbook -i single-machine site.yml
