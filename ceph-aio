@@ -11,7 +11,7 @@ systemctl disable firewalld
 systemctl stop firewalld 
 
 sudo subscription-manager repos --disable='*'
-sudo subscription-manager repos --enable=rhel-7-server-rpms --enable=rhel-7-server-extras-rpms --enable=rhel-7-server-rhceph-3-tools-rpms
+sudo subscription-manager repos --enable=rhel-7-server-rpms --enable=rhel-7-server-extras-rpms --enable=rhel-7-server-rhceph-3-tools-rpms --enable=rhel-7-server-ansible-2.6-rpms
 sudo yum -y install ceph-ansible cephmetrics-ansible
 
 sudo su 
