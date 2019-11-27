@@ -1,9 +1,11 @@
-ssh-keygen 
-
 sudo su 
 
+# subs-> register node 
+# subs-> attach node
+
 ssh-keygen 
-ssh-copy localhost 
+ssh-copy-id localhost 
+ssh-copy-id 192.168.122.20
 
 systemctl disable firewalld 
 systemctl stop firewalld 
@@ -15,25 +17,18 @@ sudo yum -y install ceph-ansible cephmetrics-ansible
 sudo su 
 cd /usr/share/ceph-ansible/
 
-ssh-keygen 
-ssh-copy localhost 
-
 SUBNET=$(ip r | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/[0-9]\{1,2\}' | head -1)
 
 cp site.yml.sample site.yml
 mkdir single-machine
 echo single-machine | xargs -n 1 cp -a group_vars
-cp single-machine/group_vars/all.sample single-machine/group_vars/all
-cp single-machine/group_vars/osds.sample single-machine/group_vars/osds
-
-SUBNET=$(ip r | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/[0-9]\{1,2\}' | head -1)
+cp single-machine/group_vars/all.yml.sample single-machine/group_vars/all.yml
+cp single-machine/group_vars/osds.yml.sample single-machine/group_vars/osds.yml
 
 sed -i "s/#common_single_host_mode: true/common_single_host_mode: true/" single-machine/group_vars/all.yml
 sed -i "s/#journal_collocation: false/journal_collocation: true/" single-machine/group_vars/osds.yml
 sed -i "s/#monitor_address: 0.0.0.0/monitor_address: 192.168.122.20/" single-machine/group_vars/all.yml
 sed -i "s/#radosgw_address: 0.0.0.0/radosgw_address: 192.168.122.20/" single-machine/group_vars/all.yml
-
-
 sed -i "s|#public_network: 0.0.0.0\/0|public_network: ${SUBNET}|" single-machine/group_vars/all.yml
 sed -i "s/#journal_size: 0/journal_size: 100/" single-machine/group_vars/all.yml
 sed -i "s/#pool_default_size: 3/pool_default_size: 2/" single-machine/group_vars/all.yml
